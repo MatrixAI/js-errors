@@ -1,1 +1,2 @@
-export { default as Library } from './lib/Library';
+export { default as AbstractError } from './AbstractError';
+export * from './types';
