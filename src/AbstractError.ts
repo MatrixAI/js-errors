@@ -6,7 +6,7 @@ import { CustomError } from 'ts-custom-error';
  * Abstract error
  * Intended for further extension
  */
-class AbstractError<T = void> extends CustomError {
+class AbstractError<T> extends CustomError {
   /**
    * Static description of exception
    */
