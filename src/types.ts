@@ -3,4 +3,6 @@
  */
 type POJO = { [key: string]: any };
 
-export type { POJO };
+type Class<T> = new (...args: any[]) => T;
+
+export type { POJO, Class };
