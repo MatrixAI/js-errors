@@ -141,9 +141,19 @@ describe('index', () => {
       EvalError,
       RangeError,
       URIError,
+      AggregateError,
     };
     function replacer(key: string, value: any): any {
-      if (value instanceof Error) {
+      if (value instanceof AggregateError) {
+        return {
+          type: value.constructor.name,
+          data: {
+            errors: value.errors,
+            message: value.message,
+            stack: value.stack,
+          },
+        };
+      } else if (value instanceof Error) {
         return {
           type: value.constructor.name,
           data: {
@@ -175,14 +185,32 @@ describe('index', () => {
           if (eClass != null) return eClass.fromJSON(value);
           eClass = standardErrors[value.type];
           if (eClass != null) {
-            if (
-              typeof value.data.message !== 'string' ||
-              ('stack' in value.data && typeof value.data.stack !== 'string')
-            ) {
-              throw new TypeError(`Cannot decode JSON to ${value.type}`);
+            let e;
+            switch (eClass) {
+              case AggregateError:
+                if (
+                  !Array.isArray(value.data.errors) ||
+                  typeof value.data.message !== 'string' ||
+                  ('stack' in value.data &&
+                    typeof value.data.stack !== 'string')
+                ) {
+                  throw new TypeError(`Cannot decode JSON to ${value.type}`);
+                }
+                e = new eClass(value.data.errors, value.data.message);
+                e.stack = value.data.stack;
+                break;
+              default:
+                if (
+                  typeof value.data.message !== 'string' ||
+                  ('stack' in value.data &&
+                    typeof value.data.stack !== 'string')
+                ) {
+                  throw new TypeError(`Cannot decode JSON to ${value.type}`);
+                }
+                e = new eClass(value.data.message);
+                e.stack = value.data.stack;
+                break;
             }
-            const e = new eClass(value.data.message);
-            e.stack = value.data.stack;
             return e;
           }
         } catch (e) {
@@ -250,6 +278,32 @@ describe('index', () => {
       const eJSONString = JSON.stringify(e, replacer);
       const e_ = JSON.parse(eJSONString, reviver);
       expect(e_).toBeInstanceOf(UnknownError);
+    });
+    test('unknown not at root is returned as-is', () => {
+      const e = new AbstractError('msg1', {
+        cause: new AggregateError([
+          // This will look like an `AbstractError`, but will cause decoding failure
+          // which means it should be returned as-is
+          {
+            type: 'AbstractError',
+            data: {},
+          },
+          // This will look like an `Error`
+          {
+            type: 'Error',
+            data: {
+              message: 'msg2',
+            },
+          },
+        ]),
+      });
+      const eJSONString = JSON.stringify(e, replacer);
+      const e_ = JSON.parse(eJSONString, reviver);
+      expect(e_).toBeInstanceOf(AbstractError);
+      expect(e_.cause).toBeInstanceOf(AggregateError);
+      expect(e_.cause.errors[0]).not.toBeInstanceOf(AbstractError);
+      expect(e_.cause.errors[0]).toStrictEqual(e.cause.errors[0]);
+      expect(e_.cause.errors[1]).toBeInstanceOf(Error);
     });
   });
 });
