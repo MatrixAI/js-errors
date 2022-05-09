@@ -12,6 +12,13 @@ class AbstractError<T> extends CustomError {
    */
   public static description: string = '';
 
+  /**
+   * Runtime decoding of JSON POJO to exception instance
+   * When overriding this, you cannot use `super.fromJSON`
+   * You must write it fully, and use the same type-hacks
+   * to support polymorphic `this` in static methods
+   * https://github.com/microsoft/TypeScript/issues/5863
+   */
   public static fromJSON<T extends Class<any>>(
     this: T,
     json: any,
@@ -74,6 +81,10 @@ class AbstractError<T> extends CustomError {
     return this.constructor['description'];
   }
 
+  /**
+   * Encoding to JSON pojo
+   * When overriding this, you can use `super.toJSON`
+   */
   public toJSON(): any {
     return {
       type: this.constructor.name,
