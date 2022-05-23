@@ -30,7 +30,6 @@ class AbstractError<T> extends CustomError {
       typeof json.data.message !== 'string' ||
       isNaN(Date.parse(json.data.timestamp)) ||
       typeof json.data.data !== 'object' ||
-      !('cause' in json.data) ||
       ('stack' in json.data && typeof json.data.stack !== 'string')
     ) {
       throw new TypeError(`Cannot decode JSON to ${this.name}`);
@@ -84,6 +83,9 @@ class AbstractError<T> extends CustomError {
   /**
    * Encoding to JSON pojo
    * When overriding this, you can use `super.toJSON`
+   * The `replacer` will:
+   *  - delete undefined values in objects
+   *  - replace undefined values for null in arrays
    */
   public toJSON(): any {
     return {
