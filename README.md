@@ -1,6 +1,7 @@
 # js-errors
 
-[![pipeline status](https://gitlab.com/MatrixAI/open-source/js-errors/badges/master/pipeline.svg)](https://gitlab.com/MatrixAI/open-source/js-errors/commits/master)
+staging:[![pipeline status](https://gitlab.com/MatrixAI/open-source/js-errors/badges/staging/pipeline.svg)](https://gitlab.com/MatrixAI/open-source/js-errors/commits/staging)
+master:[![pipeline status](https://gitlab.com/MatrixAI/open-source/js-errors/badges/master/pipeline.svg)](https://gitlab.com/MatrixAI/open-source/js-errors/commits/master)
 
 Exception system with error chaining.
 

@@ -28,6 +28,7 @@
     "no-constant-condition": 0,
     "no-useless-escape": 0,
     "no-console": "error",
+    "require-yield": 0,
     "eqeqeq": ["error", "smart"],
     "spaced-comment": [
       "warn",
@@ -48,6 +49,11 @@
         "ignoreInlineComments": true,
         "ignoreConsecutiveComments": true
       }
+    ],
+    "curly": [
+      "error",
+      "multi-line",
+      "consistent"
     ],
     "import/order": [
       "error",
@@ -114,6 +120,12 @@
         "trailingUnderscore": "allowSingleOrDouble"
       },
       {
+        "selector": "function",
+        "format": ["camelCase", "PascalCase"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allowSingleOrDouble"
+      },
+      {
         "selector": "variable",
         "format": ["camelCase", "UPPER_CASE", "PascalCase"],
         "leadingUnderscore": "allow",
@@ -129,6 +141,10 @@
         "selector": "typeLike",
         "format": ["PascalCase"],
         "trailingUnderscore": "allowSingleOrDouble"
+      },
+      {
+        "selector": "enumMember",
+        "format": ["PascalCase", "UPPER_CASE"]
       },
       {
         "selector": "objectLiteralProperty",
