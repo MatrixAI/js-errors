@@ -56,7 +56,6 @@ class AbstractError<T> extends CustomError {
 
   /**
    * Timestamp when exception was constructed in milliseconds
-   * May contain microseconds in the fractional part
    * Guaranteed to be weakly monotonic
    */
   public timestamp: Date;
