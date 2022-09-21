@@ -171,6 +171,7 @@ build:windows:
     - refreshenv
     - npm install --ignore-scripts
     - $env:Path = "$(npm bin);" + $env:Path
+    - npm test -- --ci --coverage
   artifacts:
     when: always
     reports:
