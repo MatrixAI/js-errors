@@ -22,7 +22,7 @@
     "docs": "rimraf ./docs && typedoc --gitRevision master --tsconfig ./tsconfig.build.json --out ./docs src"
   },
   "dependencies": {
-    "ts-custom-error": "^3.2.2"
+    "ts-custom-error": "3.2.2"
   },
   "devDependencies": {
     "@swc/core": "^1.2.215",
