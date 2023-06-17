@@ -43,6 +43,14 @@ master:<a href="https://gitlab.com/MatrixAI/open-source/js-errors/commits/master
 <a href="#publishing" id="publishing" style="color: inherit; text-decoration: none;">
   <h3>Publishing</h3>
 </a>
+<p>Publishing is handled automatically by the staging pipeline.</p>
+<p>Prerelease:</p>
+<pre><code class="language-sh"><span class="hl-1"># npm login</span><br/><span class="hl-0">npm version prepatch --preid alpha </span><span class="hl-1"># premajor/preminor/prepatch</span><br/><span class="hl-0">git push --follow-tags</span>
+</code></pre>
+<p>Release:</p>
+<pre><code class="language-sh"><span class="hl-1"># npm login</span><br/><span class="hl-0">npm version patch </span><span class="hl-1"># major/minor/patch</span><br/><span class="hl-0">git push --follow-tags</span>
+</code></pre>
+<p>Manually:</p>
 <pre><code class="language-sh"><span class="hl-1"># npm login</span><br/><span class="hl-0">npm version patch </span><span class="hl-1"># major/minor/patch</span><br/><span class="hl-0">npm run build</span><br/><span class="hl-0">npm publish --access public</span><br/><span class="hl-0">git push</span><br/><span class="hl-0">git push --tags</span>
 </code></pre>
 </div></div>
