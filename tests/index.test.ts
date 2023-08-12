@@ -1,5 +1,5 @@
-import type { Class } from '@/types';
-import { AbstractError } from '@';
+import type { Class } from '#types.js';
+import { AbstractError } from '#index.js';
 
 describe('index', () => {
   test('properties', () => {
