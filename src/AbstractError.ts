@@ -1,5 +1,5 @@
-import type { POJO, Class } from './types';
-import { performance } from 'perf_hooks';
+import type { POJO, Class } from './types.js';
+import { performance } from 'node:perf_hooks';
 import { CustomError } from 'ts-custom-error';
 
 /**
