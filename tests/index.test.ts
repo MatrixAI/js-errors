@@ -1,5 +1,5 @@
 import type { Class } from '#types.js';
-import { AbstractError } from '#index.js';
+import { AbstractError, utils } from '#index.js';
 
 describe('index', () => {
   test('properties', () => {
@@ -92,6 +92,36 @@ describe('index', () => {
     expect(e2.timestamp).toStrictEqual(new Date(eJSON.data.timestamp));
     expect(e2.data).toStrictEqual(eJSON.data.data);
     expect(e2.cause).toStrictEqual(eJSON.data.cause);
+  });
+  test('checking the error graph', () => {
+    try {
+      try {
+        try {
+          throw new AbstractError('a');
+        } catch (e) {
+          throw new AbstractError('b', { cause: e });
+        }
+      } catch (e) {
+        throw new AggregateError([e]);
+      }
+    } catch (e) {
+      expect(utils.checkError(e, (e) => e instanceof AbstractError)).toBe(true);
+      expect(utils.checkError(e, (e) => e instanceof AggregateError)).toBe(
+        true,
+      );
+      expect(
+        utils.checkError(
+          e,
+          (e) => e instanceof AbstractError && e.message === 'a',
+        ),
+      ).toBe(true);
+      expect(
+        utils.checkError(
+          e,
+          (e) => e instanceof AbstractError && e.message === 'b',
+        ),
+      ).toBe(true);
+    }
   });
   describe('JSON serialiation and deserialisation', () => {
     // Demonstrates an extended error with its own encoding and decoding
