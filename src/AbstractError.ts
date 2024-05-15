@@ -26,7 +26,6 @@ class AbstractError<T> extends CustomError {
     if (
       typeof json !== 'object' ||
       json.type !== this.name ||
-      typeof json.description !== 'string' ||
       typeof json.data !== 'object' ||
       typeof json.data.message !== 'string' ||
       isNaN(Date.parse(json.data.timestamp)) ||

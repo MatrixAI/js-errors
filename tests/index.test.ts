@@ -79,7 +79,6 @@ describe('index', () => {
     );
     const eJSON = {
       type: 'AbstractError',
-      description: '',
       data: {
         message: 'some message',
         timestamp: '2022-05-07T09:16:06.632Z',
