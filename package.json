@@ -1,6 +1,6 @@
 {
   "name": "@matrixai/errors",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "author": "Roger Qiu",
   "description": "Exception System",
   "license": "Apache-2.0",
