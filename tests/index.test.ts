@@ -13,7 +13,7 @@ describe('index', () => {
       expect(e.cause).toBeUndefined();
       expect(e.timestamp).toBeInstanceOf(Date);
       expect(e.stack).toBeDefined();
-      expect(Date.now() > e.timestamp).toBe(true);
+      expect(Math.abs(Date.now() - e.timestamp.getTime())).toBeLessThan(1000);
     }
     try {
       throw new AbstractError(undefined, {
