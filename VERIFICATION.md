@@ -82,3 +82,13 @@ gates passed before release preparation. The archive and unpacked outputs also
 built successfully. It is not published to npm. The legacy tag-triggered npm
 publishing workflow is removed to keep Git-only releases from invoking registry
 publication.
+
+## Prepared consumer patch 3.0.1
+
+The shared consumer now resolves and temporarily normalizes nested Git
+dependency edges for npm's clean-install validation, then restores canonical
+constraints. The matching Nix importer normalizes those same temporary edges.
+Producer archives and published dependency metadata remain verbatim. The
+redundant prepack hook is removed; prepare and explicit Nix builds retain the
+existing compilation boundary. Lint uses an explicit SSH Git URI at the
+unchanged 1.0.1 tag and revision. Existing 3.0.0 tags remain immutable.
