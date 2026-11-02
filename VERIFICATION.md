@@ -92,3 +92,17 @@ Producer archives and published dependency metadata remain verbatim. The
 redundant prepack hook is removed; prepare and explicit Nix builds retain the
 existing compilation boundary. Lint uses an explicit SSH Git URI at the
 unchanged 1.0.1 tag and revision. Existing 3.0.0 tags remain immutable.
+
+## Git-only staging patch 3.0.2
+
+This patch carries the common npm-script development workflow, explicit lint
+backend provisioning, identical generic lint configuration, and removal of the
+obsolete GitHub workflows. All six libraries passed their lintfix commands in
+the aligned Nix development environments before this dependency-pin update. The
+final release graph receives a prepared archive build; broad runtime suites are
+not repeated. Existing release tags remain immutable. No npm publication is
+performed.
+
+Selected released family inputs:
+
+- lint 1.0.2 at commit 074b1078b2da0634e69f33852b32b32ea60d2e61.
