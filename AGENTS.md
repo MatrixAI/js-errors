@@ -31,3 +31,16 @@
   explicit handwritten-docs override. Refresh it only with authorized access.
 - Materialize profile-selected skills after standards updates with
   `nix run './.matrixai/matrixai-standards#skills-materializer' -- --standards-root ./.matrixai/matrixai-standards`.
+
+## Development environment and lint
+
+- Enter the integrated devenv environment and use npm scripts directly; no
+  devenv tasks or persistent library processes are required.
+- Provision ShellCheck and nixfmt as external MatrixAI lint backends in both the
+  development shell and lint-running checks. Add SQLFluff when SQL is maintained
+  or its backend is tested. ESLint and Prettier come from locked npm
+  dependencies.
+- Use `npm run lintfix` for development and `npm run lint` for verification,
+  including Nix formatting. Do not add a separate flake formatter entrypoint.
+- Relevant domains must not rely on user-profile tools or skip because a backend
+  is absent. Use `npm run lintfix -- --explain` to inspect domain decisions.
