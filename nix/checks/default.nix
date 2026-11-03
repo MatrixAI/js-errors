@@ -1,6 +1,7 @@
 {
   pkgs,
   nodejs,
+  lint,
   system,
   gitignore,
   npmDependencies,
@@ -28,15 +29,11 @@ let
       npmDeps
       npmConfigHook
       ;
-    nativeBuildInputs = [
-      pkgs.shellcheck
-      pkgs.nixfmt
-    ];
     dontNpmBuild = true;
     doCheck = true;
     checkPhase = ''
       runHook preCheck
-      npm run check
+      npm run check:conformance
       runHook postCheck
     '';
     installPhase = ''
@@ -51,7 +48,7 @@ let
         "kind": "conformance",
         "status": "passed",
         "system": "${system}",
-        "summary": "Types, Jest/SWC unit tests, lint, emitted package, and portable browser bundle passed",
+        "summary": "Types, Jest/SWC unit tests, emitted package, and portable browser bundle passed",
         "artifacts": {
           "junit": "artifacts/junit",
           "package": "artifacts/package/report.json"
@@ -61,8 +58,16 @@ let
       runHook postInstall
     '';
   };
+  lintCheck = lint.mkCheck {
+    inherit src;
+    name = "errors-lint";
+    npmDependencies = npmDependencies // {
+      inherit nodejs;
+    };
+  };
 in
 {
+  lint = lintCheck;
   inherit verify;
   inherit integration-browser;
   runtime = pkgs.runCommand "errors-check-runtime" { } ''
@@ -85,6 +90,7 @@ in
   default = pkgs.runCommand "errors-check-default" { } ''
     mkdir -p "$out/artifacts"
     ln -s ${verify} "$out/artifacts/verify"
+    ln -s ${lintCheck} "$out/artifacts/lint"
     cat > "$out/report.json" <<EOF
     {
       "schemaVersion": 1,
@@ -93,7 +99,10 @@ in
       "status": "passed",
       "system": "${system}",
       "summary": "Routine errors verification passed",
-      "artifacts": { "verify": "artifacts/verify/report.json" }
+      "artifacts": {
+        "verify": "artifacts/verify/report.json",
+        "lint": "artifacts/lint/report.json"
+      }
     }
     EOF
   '';

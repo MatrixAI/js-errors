@@ -28,11 +28,15 @@
         let
           pkgs = nixpkgs-matrixai.legacyPackages.${system};
           nodejs = pkgs.nodejs_24;
+          lint = pkgs.matrixai-lint.withTools [
+            pkgs.nixfmt
+            pkgs.shellcheck
+          ];
           package = builtins.fromJSON (builtins.readFile ./package.json);
           packageLock = builtins.fromJSON (builtins.readFile ./package-lock.json);
           npmSources = import ./nix/npm-sources.nix {
             inherit system packageLock;
-            selections."node_modules/@matrixai/lint".name = "@matrixai/lint";
+            selections = { };
           };
           npm = import ./nix/npm-install.nix {
             inherit pkgs;
@@ -51,7 +55,7 @@
           npmPackage = import ./nix/npm-package.nix {
             inherit pkgs nodejs npmDependencies;
             gitignore = nixpkgs-matrixai.lib.gitignore;
-            # Lint is a development tool, not a runtime artifact provider.
+            # Registry runtime dependencies do not need prepared Git providers.
             runtimeProviders = [ ];
             sourceProvenance = {
               rev = if inputs.self ? dirtyRev then null else inputs.self.rev or null;
@@ -84,10 +88,13 @@
             type = "app";
             program = "${npm}/bin/npm";
           };
+          formatter = lint.formatter;
+
           checks = import ./nix/checks {
             inherit
               pkgs
               nodejs
+              lint
               system
               npmDependencies
               ;
@@ -105,13 +112,11 @@
             packages = [
               nodejs
               (pkgs.lib.hiPrio npm)
-              # External backends invoked through the npm lint scripts.
-              pkgs.shellcheck
-              pkgs.nixfmt
+              lint
             ];
             env = browserEnvironment;
             enterShell = ''
-              export PATH="${npm}/bin:$PWD/dist/bin:$PWD/node_modules/.bin:$PATH"
+              export PATH="${lint}/bin:${npm}/bin:$PWD/dist/bin:$PWD/node_modules/.bin:$PATH"
               npm install --no-audit --fund=false --prefer-offline || return "$?"
             '';
           };

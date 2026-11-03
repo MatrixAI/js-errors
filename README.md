@@ -78,6 +78,25 @@ gate. `npm run lint` is reserved for non-mutating CI/parity verification.
 Documentation is handwritten Markdown; there is no TypeDoc dependency or
 generation command.
 
+### Lint and formatting
+
+MatrixAI lint comes from the selected public nixpkgs-matrixai package set, not
+an npm dependency or a direct js-lint flake input. One configured tool
+environment is shared by the development shell, flake formatter, and independent
+hermetic lint check. The bundled CLI owns configuration; TypeScript remains a
+consumer development dependency.
+
+```sh
+nix fmt
+npm run lintfix
+npm run lint
+nix build '.#checks.x86_64-linux.lint'
+```
+
+The first two commands share the formatting authority across applicable domains,
+including TypeScript, Markdown, shell, and Nix. The last two are non-mutating
+verification; the Nix lint gate works without an activated development shell.
+
 The standards submodule and profile-selected runtime skills are initialized
 with:
 
@@ -106,25 +125,25 @@ Evaluation-visible schema-v1 `npmPackage` and `npmDistribution` descriptors
 report manifest identity, dependency metadata, source provenance, archive
 output, and runtime provider candidates. The source snapshot hash is not an
 archive checksum. No prepared runtime providers are advertised:
-`ts-custom-error` is a normal registry dependency, while MatrixAI lint is
-development-only.
+`ts-custom-error` is a normal registry dependency, while MatrixAI lint comes
+from the package set.
 
-The [dependency adapter](nix/npm-sources.nix) selects lint's exact locked Git
-revision and validates producer metadata before using its prepared archive.
-Hermetic installs use importNpmLock and its matching Node installation hook.
-Local installs use the same selected archive and restore canonical manifests
-after temporary install-only overrides, including failure recovery. Source pins
-are not replaced with local paths or published as Nix paths.
+Hermetic installs use importNpmLock and its matching Node installation hook. The
+generic [dependency adapter](nix/npm-sources.nix) retains support for reviewed
+runtime Git providers, but this package needs no selected prepared archives.
+Lint has no npm archive selection or consumer Git input. Source pins are not
+replaced with local paths or published as Nix paths.
 
 ## Verification boundaries
 
-The default hermetic gate aggregates routine `verify` checks. A separate
-`runtime` aggregate selects the independent `integration-browser` check. Each
-retains a machine-readable report and artifacts. Verification runs types,
-build-first unit tests, non-mutating lint, and packed-package checks. Browser
-integration executes the packed package in a real Chromium document and
-dedicated worker, without builtin aliases or Node compatibility flags. These are
-local browser checks, not deployed-platform or all-browser support claims.
+The default hermetic gate aggregates routine `verify` and independent `lint`
+checks. A separate `runtime` aggregate selects the independent
+`integration-browser` check. Each retains a machine-readable report and
+artifacts. Verification runs types, build-first unit tests, non-mutating lint,
+and packed-package checks. Browser integration executes the packed package in a
+real Chromium document and dedicated worker, without builtin aliases or Node
+compatibility flags. These are local browser checks, not deployed-platform or
+all-browser support claims.
 
 The [package checker](scripts/check-package.mjs) compares the packed manifest
 byte-for-byte, checks exports and declarations without Node ambient types, and
