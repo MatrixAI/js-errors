@@ -5,58 +5,33 @@
   system,
   gitignore,
   npmDependencies,
+  libraryBuild,
+  installedDependencies,
+  setupDependencies,
 }:
 let
   src = gitignore.gitignoreSource ../..;
-  inherit (npmDependencies) npmDeps npmConfigHook;
   runtimeInputs = {
     inherit
       pkgs
       nodejs
       system
       src
-      npmDeps
-      npmConfigHook
+      setupDependencies
       ;
   };
-  integration-browser = import ./integration-browser.nix runtimeInputs;
-  verify = pkgs.buildNpmPackage {
-    pname = "errors-verify";
-    version = "0.1.0";
+  browserBundle = import ./browser/bundle.nix (runtimeInputs // { inherit libraryBuild; });
+  integration-browser = import ./browser (runtimeInputs // { inherit browserBundle; });
+  unit-js = import ./unit-js.nix {
     inherit
-      src
+      pkgs
       nodejs
-      npmDeps
-      npmConfigHook
+      system
+      src
+      setupDependencies
+      installedDependencies
+      libraryBuild
       ;
-    dontNpmBuild = true;
-    doCheck = true;
-    checkPhase = ''
-      runHook preCheck
-      npm run check:conformance
-      runHook postCheck
-    '';
-    installPhase = ''
-      runHook preInstall
-      mkdir -p "$out/artifacts"
-      cp -R tmp/junit "$out/artifacts/junit"
-      cp -R tmp/package-candidate "$out/artifacts/package"
-      cat > "$out/report.json" <<EOF
-      {
-        "schemaVersion": 1,
-        "name": "verify",
-        "kind": "conformance",
-        "status": "passed",
-        "system": "${system}",
-        "summary": "Types, Jest/SWC unit tests, emitted package, and portable browser bundle passed",
-        "artifacts": {
-          "junit": "artifacts/junit",
-          "package": "artifacts/package/report.json"
-        }
-      }
-      EOF
-      runHook postInstall
-    '';
   };
   lintCheck = lint.mkCheck {
     inherit src;
@@ -68,7 +43,7 @@ let
 in
 {
   lint = lintCheck;
-  inherit verify;
+  inherit unit-js;
   inherit integration-browser;
   runtime = pkgs.runCommand "errors-check-runtime" { } ''
     mkdir -p "$out/artifacts"
@@ -89,7 +64,7 @@ in
   '';
   default = pkgs.runCommand "errors-check-default" { } ''
     mkdir -p "$out/artifacts"
-    ln -s ${verify} "$out/artifacts/verify"
+    ln -s ${unit-js} "$out/artifacts/unit-js"
     ln -s ${lintCheck} "$out/artifacts/lint"
     cat > "$out/report.json" <<EOF
     {
@@ -100,7 +75,7 @@ in
       "system": "${system}",
       "summary": "Routine errors verification passed",
       "artifacts": {
-        "verify": "artifacts/verify/report.json",
+        "unit-js": "artifacts/unit-js/report.json",
         "lint": "artifacts/lint/report.json"
       }
     }

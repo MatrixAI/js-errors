@@ -52,8 +52,36 @@
               npmSources
               ;
           };
+          installedDependencies = pkgs.buildNpmPackage {
+            pname = "library-npm-dependencies";
+            version = "0";
+            src = npmDependencies.npmDeps;
+            inherit nodejs;
+            inherit (npmDependencies) npmDeps npmConfigHook;
+            dontNpmBuild = true;
+            dontFixup = true;
+            installPhase = ''
+              mkdir -p "$out"
+              mv node_modules "$out/node_modules"
+            '';
+          };
+          setupDependencies = ''
+            mkdir node_modules
+            find ${installedDependencies}/node_modules -mindepth 1 -maxdepth 1 \
+              -exec ln -s -t node_modules {} +
+            export PATH="$PWD/node_modules/.bin:$PATH"
+          '';
+          libraryBuild = import ./nix/npm-build.nix {
+            inherit pkgs nodejs setupDependencies;
+            gitignore = nixpkgs-matrixai.lib.gitignore;
+          };
           npmPackage = import ./nix/npm-package.nix {
-            inherit pkgs nodejs npmDependencies;
+            inherit
+              pkgs
+              nodejs
+              npmDependencies
+              libraryBuild
+              ;
             gitignore = nixpkgs-matrixai.lib.gitignore;
             # Registry runtime dependencies do not need prepared Git providers.
             runtimeProviders = [ ];
@@ -97,6 +125,9 @@
               lint
               system
               npmDependencies
+              libraryBuild
+              installedDependencies
+              setupDependencies
               ;
             gitignore = nixpkgs-matrixai.lib.gitignore;
           };
@@ -117,7 +148,6 @@
             env = browserEnvironment;
             enterShell = ''
               export PATH="${lint}/bin:${npm}/bin:$PWD/dist/bin:$PWD/node_modules/.bin:$PATH"
-              npm install --no-audit --fund=false --prefer-offline || return "$?"
             '';
           };
         };

@@ -6,15 +6,15 @@
   artifact for Node, browsers, and workers; do not add platform SDKs or builtins
   to runtime source.
 - Source imports are relative. Tests import built modules through the package
-  import mapping. Preserve explicit type imports and standard-track decorators.
+  import mapping. Local tests build incrementally; hermetic checks use prebuilt
+  output. Preserve explicit type imports and standard-track decorators.
 - Run `npm run lintfix` during development; reserve `npm run lint` for
   non-mutating verification. MatrixAI lint owns formatting across supported
   domains. Do not invoke underlying formatters directly.
-- Golden commands: `npm run build`, `npm run typecheck`,
-  `npm test -- --runInBand`, `npm run check:package`, `npm run test:browser`,
-  and `npm run check`.
-- Keep the Jest/SWC ESM runner, build-first tests, 20-second default timeout,
-  and JUnit/coverage artifacts under `tmp/`.
+- Golden commands: `npm run build`, `npm test`, `npm run lintfix`, and
+  `nix build '.#checks.x86_64-linux.runtime'`.
+- Use Vitest with explicit imports, a 20-second default timeout, and
+  JUnit/coverage artifacts under `tmp/`.
 - Documentation is handwritten Markdown. Do not restore TypeDoc or generated API
   documentation, add GitHub Actions, or publish/tag without approval.
 - Keep prepared npm archives verbatim: preserve the canonical manifest and

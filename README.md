@@ -55,28 +55,25 @@ than replacing it with the current time.
 
 The [flake](flake.nix) defines flake-parts with integrated devenv and direnv.
 Review [`.envrc`](.envrc), then run `direnv allow .` or enter with
-`nix develop`. Activation installs dependencies through a serialized
-prepared-archive adapter; it does not load credentials or change persistent
-shell options. Once activated, run commands directly without another direnv
-wrapper.
+`nix develop`. Activation does not install dependencies, load credentials, or
+change persistent shell options. Once activated, run `npm install` explicitly
+through the serialized prepared-archive adapter, then run commands directly
+without another direnv wrapper.
 
 ```sh
 npm run lintfix
 npm run build
-npm run typecheck
-npm test -- --runInBand
-npm run check:package
-npm run test:browser
-npm run check
+npm test
+nix build '.#checks.x86_64-linux.runtime'
 ```
 
-Tests build first, use compiled imports, and run Jest/SWC in ESM mode. Test
-flags and paths pass through `npm test`. JUnit is written to
-`tmp/junit/junit.xml`; `npm test -- --runInBand --coverage` also writes
-Cobertura under `tmp/coverage`. `npm run lintfix` is the active-development lint
-gate. `npm run lint` is reserved for non-mutating CI/parity verification.
-Documentation is handwritten Markdown; there is no TypeDoc dependency or
-generation command.
+Tests use compiled imports and run with Vitest. Local tests build incrementally;
+hermetic unit checks use prebuilt output. Test flags and paths pass through
+`npm test`. JUnit is written to `tmp/junit/junit.xml`; `npm test -- --coverage`
+also writes Cobertura under `tmp/coverage`. `npm run lintfix` is the
+active-development lint gate. `npm run lint` is reserved for non-mutating
+CI/parity verification. Documentation is handwritten Markdown; there is no
+TypeDoc dependency or generation command.
 
 ### Lint and formatting
 
@@ -136,20 +133,12 @@ replaced with local paths or published as Nix paths.
 
 ## Verification boundaries
 
-The default hermetic gate aggregates routine `verify` and independent `lint`
-checks. A separate `runtime` aggregate selects the independent
-`integration-browser` check. Each retains a machine-readable report and
-artifacts. Verification runs types, build-first unit tests, non-mutating lint,
-and packed-package checks. Browser integration executes the packed package in a
-real Chromium document and dedicated worker, without builtin aliases or Node
+The default hermetic gate aggregates the `unit-js` and independent `lint`
+checks. The separate `runtime` aggregate selects `integration-browser`, which
+uses the shared Playwright harness against the compiled browser bundle in a
+Chromium document and dedicated worker, without builtin aliases or Node
 compatibility flags. These are local browser checks, not deployed-platform or
 all-browser support claims.
-
-The [package checker](scripts/check-package.mjs) compares the packed manifest
-byte-for-byte, checks exports and declarations without Node ambient types, and
-bundles for the browser without aliases. Its consumer reconstructs the declared
-runtime dependency from the lockfile-installed dependency tree. This is not
-evidence of a fresh recursive application installation.
 
 See [verification evidence](VERIFICATION.md) for executed results and remaining
 limits. Publishing and tagging require explicit approval.

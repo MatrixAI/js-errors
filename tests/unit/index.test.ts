@@ -1,4 +1,5 @@
 import type { Class } from '#types.js';
+import { describe, expect, test } from 'vitest';
 import { AbstractError, utils } from '#index.js';
 
 describe('index', () => {

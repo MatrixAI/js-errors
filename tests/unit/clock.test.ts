@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
 const originalPerformance = Object.getOwnPropertyDescriptor(
   globalThis,
@@ -13,11 +13,11 @@ function setPerformance(value: unknown) {
 }
 
 beforeEach(() => {
-  jest.resetModules();
+  vi.resetModules();
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
   if (originalPerformance != null) {
     Object.defineProperty(globalThis, 'performance', originalPerformance);
   } else {
@@ -34,7 +34,7 @@ describe('portable timestamp clock', () => {
         return 123.75;
       },
     });
-    const wall = jest.spyOn(Date, 'now').mockReturnValue(42);
+    const wall = vi.spyOn(Date, 'now').mockReturnValue(42);
     const { timestampNow } = await import('#clock.js');
     expect(timestampNow()).toBe(1700000000123);
     expect(wall).not.toHaveBeenCalled();
@@ -62,7 +62,7 @@ describe('portable timestamp clock', () => {
     'falls back for an absent or unusable performance API: %p',
     async (clock) => {
       setPerformance(clock);
-      jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+      vi.spyOn(Date, 'now').mockReturnValue(1700000000000);
       const { timestampNow } = await import('#clock.js');
       expect(timestampNow()).toBe(1700000000000);
     },
@@ -75,14 +75,14 @@ describe('portable timestamp clock', () => {
         throw new Error('access denied');
       },
     });
-    jest.spyOn(Date, 'now').mockReturnValue(1000);
+    vi.spyOn(Date, 'now').mockReturnValue(1000);
     const { timestampNow } = await import('#clock.js');
     expect(timestampNow()).toBe(1000);
   });
 
   test('allows equality and clamps backwards wall-clock movement', async () => {
     setPerformance(undefined);
-    const wall = jest.spyOn(Date, 'now').mockReturnValue(1000);
+    const wall = vi.spyOn(Date, 'now').mockReturnValue(1000);
     const { timestampNow } = await import('#clock.js');
     expect(timestampNow()).toBe(1000);
     expect(timestampNow()).toBe(1000);
@@ -100,16 +100,16 @@ describe('portable timestamp clock', () => {
     relative = 10.1;
     expect(timestampNow()).toBe(1010);
     setPerformance(undefined);
-    jest.spyOn(Date, 'now').mockReturnValue(900);
+    vi.spyOn(Date, 'now').mockReturnValue(900);
     expect(timestampNow()).toBe(1010);
     setPerformance({ timeOrigin: 1000, now: () => 20 });
     expect(timestampNow()).toBe(1020);
   });
 
   test('preserves explicit timestamps and JSON without sampling or poisoning the clock', async () => {
-    setPerformance(undefined);
-    const wall = jest.spyOn(Date, 'now').mockReturnValue(1000);
     const { AbstractError } = await import('#index.js');
+    setPerformance(undefined);
+    const wall = vi.spyOn(Date, 'now').mockReturnValue(1000);
     const future = new Date(9000000000000);
     const explicit = new AbstractError('explicit', { timestamp: future });
     expect(explicit.timestamp).toBe(future);

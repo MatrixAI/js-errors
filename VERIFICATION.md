@@ -10,21 +10,18 @@ installed by the library.
 
 ## Commands and artifacts
 
-- `npm run check` verifies types, unit tests, lint, and packed-package behavior.
-- `npm run test:browser` verifies the packed package in Chromium document and
-  dedicated-worker realms.
+- `npm test` and `npm run lint` verify unit and type cases and lint.
 - `nix build '.#checks.x86_64-linux.default'` runs routine hermetic verification
-  through `verify`.
+  through `unit-js` and `lint`, including full-project typechecking.
 - `nix build '.#checks.x86_64-linux.runtime'` selects the independent
-  `integration-browser` environment adapter.
+  `integration-browser` adapter for Chromium document and worker realms.
 - `nix build '.#npm-package'` builds the verbatim prepared archive.
 - `nix build '.#npm-package-unpacked'` builds its exact unpacked view.
 
-Checkout artifacts live under `tmp/junit`, `tmp/coverage`,
-`tmp/package-candidate`, and `tmp/integration-browser`. Check derivations retain
-a root report and an artifacts directory. Failed runs are not successful
-evidence; support claims must identify the commands and environments actually
-executed.
+Checkout artifacts live under `tmp/junit`, `tmp/coverage`, and
+`tmp/integration-browser`. Check derivations retain a root report and an
+artifacts directory. Failed runs are not successful evidence; support claims
+must identify the commands and environments actually executed.
 
 ## Execution evidence
 
@@ -106,3 +103,16 @@ performed.
 Selected released family inputs:
 
 - lint 1.0.2 at commit 074b1078b2da0634e69f33852b32b32ea60d2e61.
+
+## Git-only patch candidate 3.0.3
+
+The development and Nix check harness now uses Vitest, incremental local builds,
+and the shared Playwright browser structure. The portable clock retains the same
+guarded performance-clock, wall-clock fallback, and monotonic-clamping strategy
+as timer. Package-test machinery is removed; npm producer outputs remain.
+
+On x86_64-linux with Node.js 24.21.0, the local unit and type suite passed 30
+cases, and typechecking, lint, and build passed. The Nix default and runtime
+gates and both prepared archive outputs passed after removal of package tests.
+The runtime gate passed in Chromium document and dedicated-worker realms. These
+results are not deployed-platform or all-browser compatibility claims.
