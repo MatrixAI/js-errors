@@ -1,6 +1,6 @@
 import type { POJO, Class } from './types.js';
-import { performance } from 'node:perf_hooks';
 import { CustomError } from 'ts-custom-error';
+import { timestampNow } from './clock.js';
 
 /**
  * Abstract error
@@ -56,7 +56,8 @@ class AbstractError<T> extends CustomError {
 
   /**
    * Timestamp when exception was constructed in milliseconds
-   * Guaranteed to be weakly monotonic
+   * Generated timestamps are weakly monotonic within this module instance.
+   * Explicit timestamps are preserved without affecting the generated clock.
    */
   public timestamp: Date;
 
@@ -69,8 +70,7 @@ class AbstractError<T> extends CustomError {
     } = {},
   ) {
     super(message);
-    this.timestamp =
-      options.timestamp ?? new Date(performance.timeOrigin + performance.now());
+    this.timestamp = options.timestamp ?? new Date(timestampNow());
     this.data = options.data ?? {};
     this.cause = options.cause as T;
   }
