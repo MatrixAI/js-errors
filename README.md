@@ -125,11 +125,12 @@ archive checksum. No prepared runtime providers are advertised:
 `ts-custom-error` is a normal registry dependency, while MatrixAI lint comes
 from the package set.
 
-Hermetic installs use importNpmLock and its matching Node installation hook. The
-generic [dependency adapter](nix/npm-sources.nix) retains support for reviewed
-runtime Git providers, but this package needs no selected prepared archives.
-Lint has no npm archive selection or consumer Git input. Source pins are not
-replaced with local paths or published as Nix paths.
+Hermetic installs use the shared
+[npm bridge](https://github.com/MatrixAI/nixpkgs-matrixai/tree/staging/lib/npm-bridge)
+and its matching Node installation hook. The bridge supports reviewed runtime
+Git providers, but this package needs no selected prepared archives. Lint has no
+npm archive selection or consumer Git input. Source pins are not replaced with
+local paths or published as Nix paths.
 
 ## Verification boundaries
 

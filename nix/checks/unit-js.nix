@@ -5,7 +5,7 @@
   src,
   setupDependencies,
   installedDependencies,
-  libraryBuild,
+  npmBuild,
 }:
 pkgs.stdenv.mkDerivation {
   pname = "errors-unit-js";
@@ -26,7 +26,7 @@ pkgs.stdenv.mkDerivation {
     chmod -R u+w tmp/vitest/package
     rm node_modules/vitest
     ln -s ../tmp/vitest/package node_modules/vitest
-    ln -s ${libraryBuild}/dist dist
+    ln -s ${npmBuild}/dist dist
     # Preserve the full-project no-emit typecheck separately from compilation.
     ./node_modules/.bin/tsc -p ./tsconfig.json --incremental false
     npm test -- --prebuilt

@@ -32,89 +32,19 @@
             pkgs.nixfmt
             pkgs.shellcheck
           ];
-          package = builtins.fromJSON (builtins.readFile ./package.json);
-          packageLock = builtins.fromJSON (builtins.readFile ./package-lock.json);
-          npmSources = import ./nix/npm-sources.nix {
-            inherit system packageLock;
-            selections = { };
-          };
-          npm = import ./nix/npm-install.nix {
-            inherit pkgs;
-            packageName = package.name;
-            sources = npmSources;
-          };
-          npmDependencies = import ./nix/npm-deps.nix {
-            inherit
-              pkgs
-              nodejs
-              package
-              packageLock
-              npmSources
-              ;
-          };
-          installedDependencies = pkgs.buildNpmPackage {
-            pname = "library-npm-dependencies";
-            version = "0";
-            src = npmDependencies.npmDeps;
-            inherit nodejs;
-            inherit (npmDependencies) npmDeps npmConfigHook;
-            dontNpmBuild = true;
-            dontFixup = true;
-            installPhase = ''
-              mkdir -p "$out"
-              mv node_modules "$out/node_modules"
-            '';
-          };
-          setupDependencies = ''
-            mkdir node_modules
-            find ${installedDependencies}/node_modules -mindepth 1 -maxdepth 1 \
-              -exec ln -s -t node_modules {} +
-            export PATH="$PWD/node_modules/.bin:$PATH"
-          '';
-          libraryBuild = import ./nix/npm-build.nix {
-            inherit pkgs nodejs setupDependencies;
+          npmLibrary = nixpkgs-matrixai.lib.npmBridge.producer.libraryFromRoot {
+            inherit pkgs nodejs;
             gitignore = nixpkgs-matrixai.lib.gitignore;
-          };
-          npmPackage = import ./nix/npm-package.nix {
-            inherit
-              pkgs
-              nodejs
-              npmDependencies
-              libraryBuild
-              ;
-            gitignore = nixpkgs-matrixai.lib.gitignore;
-            # Registry runtime dependencies do not need prepared Git providers.
-            runtimeProviders = [ ];
-            sourceProvenance = {
-              rev = if inputs.self ? dirtyRev then null else inputs.self.rev or null;
-              dirtyRev = inputs.self.dirtyRev or null;
-              narHash = inputs.self.narHash or null;
-              dirty =
-                if inputs.self ? dirtyRev then
-                  true
-                else if inputs.self ? rev then
-                  false
-                else
-                  null;
-            };
-          };
-          browserEnvironment = {
-            CHECK_PLAYWRIGHT_VERSION = pkgs.playwright-driver.version;
-            PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
-            PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
-            PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
-            FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
+            root = ./.;
+            self = inputs.self;
           };
         in
         {
           packages = {
-            default = npmPackage.out;
-            npm-package = npmPackage.out;
-            npm-package-unpacked = npmPackage.unpacked;
-          };
-          apps.npm = {
-            type = "app";
-            program = "${npm}/bin/npm";
+            default = npmLibrary.npmPackage.out;
+            npm-build = npmLibrary.npmBuild;
+            npm-package = npmLibrary.npmPackage.out;
+            npm-package-unpacked = npmLibrary.npmPackage.unpacked;
           };
           formatter = lint.formatter;
 
@@ -124,12 +54,8 @@
               nodejs
               lint
               system
-              npmDependencies
-              libraryBuild
-              installedDependencies
-              setupDependencies
+              npmLibrary
               ;
-            gitignore = nixpkgs-matrixai.lib.gitignore;
           };
           devShells.ci = config.devShells.default;
           devenv.shells.default = { lib, ... }: {
@@ -142,12 +68,19 @@
             );
             packages = [
               nodejs
-              (pkgs.lib.hiPrio npm)
+              (pkgs.lib.hiPrio npmLibrary.npm)
               lint
             ];
-            env = browserEnvironment;
+            env = {
+              CHECK_PLAYWRIGHT_VERSION = pkgs.playwright-driver.version;
+              PLAYWRIGHT_BROWSERS_PATH = "${pkgs.playwright-driver.browsers}";
+              PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+              PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS = "true";
+              FONTCONFIG_FILE = pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; };
+            };
             enterShell = ''
-              export PATH="${lint}/bin:${npm}/bin:$PWD/dist/bin:$PWD/node_modules/.bin:$PATH"
+              mkdir -p "$PWD/tmp"
+              export PATH="${npmLibrary.npm}/bin:${lint}/bin:$PWD/dist/bin:$PWD/node_modules/.bin:$PATH"
             '';
           };
         };
