@@ -116,3 +116,21 @@ cases, and typechecking, lint, and build passed. The Nix default and runtime
 gates and both prepared archive outputs passed after removal of package tests.
 The runtime gate passed in Chromium document and dedicated-worker realms. These
 results are not deployed-platform or all-browser compatibility claims.
+
+## Git-only release 4.0.0
+
+This major release adds error-relationship inspection and class-directed graph
+conversion. It removes the previous matching helper and changes class JSON cause
+handling and subclass override contracts. Applications must provide a compatible
+suppression constructor where the runtime lacks one and own their JSON and
+disclosure policy for arbitrary values.
+
+On x86_64-linux with Node.js 24.21.0, the local build, typecheck, lint, and 58
+unit and type cases passed. Structured MADR validation passed. The Nix default
+and runtime checks passed, including Chromium document and dedicated-worker
+cases. The prepared archive and unpacked output built, and the packed manifest
+matched the source manifest. These checks used the release version in a dirty
+checkout; they do not prove compatibility with existing kernel or RPC wire
+formats or non-Chromium browsers. The specification remains proposed.
+
+This release follows the Git-only process and does not publish to npm.
