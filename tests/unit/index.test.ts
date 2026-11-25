@@ -106,20 +106,19 @@ describe('index', () => {
         throw new AggregateError([e]);
       }
     } catch (e) {
-      expect(utils.checkError(e, (e) => e instanceof AbstractError)).toBe(true);
-      expect(utils.checkError(e, (e) => e instanceof AggregateError)).toBe(
+      const values = [...utils.walkErrorGraph(e)].map((entry) => entry.value);
+      expect(values.some((value) => value instanceof AbstractError)).toBe(true);
+      expect(values.some((value) => value instanceof AggregateError)).toBe(
         true,
       );
       expect(
-        utils.checkError(
-          e,
-          (e) => e instanceof AbstractError && e.message === 'a',
+        values.some(
+          (value) => value instanceof AbstractError && value.message === 'a',
         ),
       ).toBe(true);
       expect(
-        utils.checkError(
-          e,
-          (e) => e instanceof AbstractError && e.message === 'b',
+        values.some(
+          (value) => value instanceof AbstractError && value.message === 'b',
         ),
       ).toBe(true);
     }
@@ -150,8 +149,8 @@ describe('index', () => {
         super(message);
         this.num = num;
       }
-      public toJSON() {
-        const obj = super.toJSON();
+      public toJSON(key?: string, encodeCause?: (value: unknown) => unknown) {
+        const obj = super.toJSON(key, encodeCause);
         obj.data.num = this.num;
         return obj;
       }

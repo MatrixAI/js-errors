@@ -15,6 +15,8 @@ for (const realm of browserRealms) {
         monotonic: boolean;
         decoded: boolean;
         graph: boolean;
+        graphJSON: boolean;
+        graphWalk: boolean;
       }
     >(realm, async (library) => {
       class BrowserError extends library.AbstractError<Error> {
@@ -26,6 +28,10 @@ for (const realm of browserRealms) {
       });
       const second = new BrowserError();
       const decoded = BrowserError.fromJSON(JSON.parse(JSON.stringify(first)));
+      const graphDecoded = library.utils.decodeErrorGraph(
+        JSON.parse(JSON.stringify(library.utils.encodeErrorGraph(first))),
+        { decoders: [BrowserError] },
+      ) as BrowserError;
       return {
         name: first.name,
         description: decoded.description,
@@ -34,9 +40,16 @@ for (const realm of browserRealms) {
         decoded:
           decoded.message === first.message &&
           decoded.timestamp.getTime() === first.timestamp.getTime(),
-        graph: library.utils.checkError(
-          new AggregateError([first]),
-          (value) => value === first.cause,
+        graph: [
+          ...library.utils.walkErrorGraph(new AggregateError([first])),
+        ].some((entry) => entry.value === first.cause),
+        graphJSON:
+          graphDecoded instanceof BrowserError &&
+          graphDecoded.cause instanceof Error &&
+          graphDecoded.cause.message === 'cause',
+        graphWalk: [...library.utils.walkErrorGraph(first)].some(
+          (entry) =>
+            entry.relation?.kind === 'cause' && entry.value === first.cause,
         ),
       };
     });
@@ -45,6 +58,8 @@ for (const realm of browserRealms) {
     expect(result.monotonic).toBe(true);
     expect(result.decoded).toBe(true);
     expect(result.graph).toBe(true);
+    expect(result.graphJSON).toBe(true);
+    expect(result.graphWalk).toBe(true);
     expect(Math.abs(Date.now() - result.timestamp)).toBeLessThan(60_000);
   });
 }

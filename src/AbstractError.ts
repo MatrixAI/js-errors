@@ -1,6 +1,7 @@
-import type { POJO, Class } from './types.js';
+import type { POJO, Class, GraphErrorDecoder } from './types.js';
 import { CustomError } from 'ts-custom-error';
 import { timestampNow } from './clock.js';
+import { decodeErrorGraph, encodeErrorGraph } from './utils.js';
 
 /**
  * Abstract error
@@ -13,15 +14,21 @@ class AbstractError<T> extends CustomError {
   public static description: string = '';
 
   /**
-   * Runtime decoding of JSON POJO to exception instance
-   * When overriding this, you cannot use `super.fromJSON`
-   * You must write it fully, and use the same type-hacks
-   * to support polymorphic `this` in static methods
-   * https://github.com/microsoft/TypeScript/issues/5863
+   * Reconstruct this class from its serialized error record. By default the
+   * cause decoder recognizes this class, AbstractError, and supported native
+   * errors. Supply a cause decoder for other registered classes or an
+   * application-specific representation. It converts only the cause: callers
+   * must validate the complete record and apply their own trust policy. A custom
+   * decoder must enforce any cycle and depth limits it needs. Overrides with
+   * custom constructors must use the supplied callback for their cause.
    */
   public static fromJSON<T extends Class<any>>(
     this: T,
     json: any,
+    decodeCause: (value: unknown) => unknown = (cause) =>
+      decodeErrorGraph(cause, {
+        decoders: [this as unknown as GraphErrorDecoder],
+      }),
   ): InstanceType<T> {
     if (
       typeof json !== 'object' ||
@@ -30,14 +37,15 @@ class AbstractError<T> extends CustomError {
       typeof json.data.message !== 'string' ||
       isNaN(Date.parse(json.data.timestamp)) ||
       typeof json.data.data !== 'object' ||
-      ('stack' in json.data && typeof json.data.stack !== 'string')
+      (json.data.stack !== undefined && typeof json.data.stack !== 'string')
     ) {
       throw new TypeError(`Cannot decode JSON to ${this.name}`);
     }
+    const cause = json.data.cause;
     const e = new this(json.data.message, {
       timestamp: new Date(json.data.timestamp),
       data: json.data.data,
-      cause: json.data.cause,
+      cause: cause === undefined ? undefined : decodeCause(cause),
     });
     e.stack = json.data.stack;
     return e;
@@ -80,13 +88,21 @@ class AbstractError<T> extends CustomError {
   }
 
   /**
-   * Encoding to JSON pojo
-   * When overriding this, you can use `super.toJSON`
-   * The `replacer` will:
-   *  - delete undefined values in objects
-   *  - replace undefined values for null in arrays
+   * Create this error's class-directed record. By default the cause encoder
+   * converts supported error graphs; supply a callback when the cause requires a
+   * different representation. It converts only the cause and does not redact
+   * this error's message, stack, timestamp, or data. A custom encoder must enforce
+   * any cycle and depth limits it needs. Overrides must forward the callback to
+   * super so graph traversal shares the caller's cycle and depth context.
+   * JSON.stringify supplies the first argument as a string key; to use a custom
+   * callback, call this method explicitly before stringifying its result.
    */
-  public toJSON(): any {
+  public toJSON(
+    _key?: string,
+    encodeCause: (value: unknown) => unknown = (cause) =>
+      encodeErrorGraph(cause, {}, new Set([this])),
+  ): any {
+    const cause = this.cause;
     return {
       type: this.constructor.name,
       description: this.description,
@@ -94,7 +110,7 @@ class AbstractError<T> extends CustomError {
         message: this.message,
         timestamp: this.timestamp,
         data: this.data,
-        cause: this.cause,
+        cause: cause === undefined ? undefined : encodeCause(cause),
         stack: this.stack,
       },
     };
