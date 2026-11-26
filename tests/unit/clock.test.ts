@@ -26,6 +26,26 @@ afterEach(() => {
 });
 
 describe('portable timestamp clock', () => {
+  test('falls back from a nonnumeric performance reading', async () => {
+    const { readEpochMilliseconds } = await import('#clock.js');
+    setPerformance({ timeOrigin: 1000, now: () => null });
+    vi.spyOn(Date, 'now').mockReturnValue(2000);
+    expect(readEpochMilliseconds()).toBe(2000);
+  });
+
+  test('invalid fallback readings fail without poisoning the timestamp clock', async () => {
+    const { timestampNow } = await import('#clock.js');
+    setPerformance(undefined);
+    const wall = vi.spyOn(Date, 'now').mockReturnValue(2000);
+    expect(timestampNow()).toBe(2000);
+    wall.mockReturnValue(NaN);
+    expect(() => timestampNow()).toThrow(RangeError);
+    wall.mockReturnValue(1900);
+    expect(timestampNow()).toBe(2000);
+    wall.mockReturnValue(2100);
+    expect(timestampNow()).toBe(2100);
+  });
+
   test('uses the epoch origin and preserves the performance receiver', async () => {
     setPerformance({
       timeOrigin: 1700000000000,

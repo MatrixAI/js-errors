@@ -322,6 +322,8 @@ Generated timestamps use the global Performance API's epoch origin plus its
 relative clock when usable. Missing, restricted, incomplete, non-finite, or
 out-of-range performance clocks fall back to `Date.now()`. The clock is sampled
 synchronously when an error needs a generated timestamp, not at module import.
+An invalid wall-clock result raises `RangeError`; a thrown wall-clock failure
+propagates without advancing the generated clock state.
 
 Generated timestamps are weakly nondecreasing within one loaded clock module
 instance. Millisecond precision allows equality; a backwards clock adjustment

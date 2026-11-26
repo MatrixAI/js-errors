@@ -1,11 +1,5 @@
-/**
- * Internal epoch clock. Capability detection keeps the same emitted module
- * usable in Node, documents, and workers without platform imports or async init.
- */
-let lastTimestamp = -Infinity;
-
-function timestampNow(): number {
-  let timestamp: number | undefined;
+/** Read epoch milliseconds using the portable performance clock or wall clock. */
+function readEpochMilliseconds(): number {
   try {
     const performance = globalThis.performance;
     if (
@@ -13,18 +7,32 @@ function timestampNow(): number {
       typeof performance.timeOrigin === 'number' &&
       typeof performance.now === 'function'
     ) {
-      const candidate = performance.timeOrigin + performance.now();
-      if (Number.isFinite(candidate) && Math.abs(candidate) <= 8.64e15) {
-        timestamp = candidate;
+      const elapsed = performance.now();
+      if (typeof elapsed === 'number') {
+        const candidate = performance.timeOrigin + elapsed;
+        if (Number.isFinite(candidate) && Math.abs(candidate) <= 8.64e15) {
+          return candidate;
+        }
       }
     }
   } catch {
-    // Restricted hosts may expose throwing getters or an unusable clock.
+    // Restricted hosts can expose throwing performance capabilities.
   }
-  timestamp ??= Date.now();
+  const timestamp = Date.now();
+  if (!Number.isFinite(timestamp) || Math.abs(timestamp) > 8.64e15) {
+    throw new RangeError('Wall clock must return a valid epoch timestamp');
+  }
+  return timestamp;
+}
+
+/** Internal epoch clock with module-local weakly monotonic timestamps. */
+let lastTimestamp = -Infinity;
+
+function timestampNow(): number {
+  const timestamp = readEpochMilliseconds();
   // Date has millisecond precision. Equality is intentional, not a sequence ID.
   lastTimestamp = Math.max(lastTimestamp, Math.trunc(timestamp));
   return lastTimestamp;
 }
 
-export { timestampNow };
+export { readEpochMilliseconds, timestampNow };
